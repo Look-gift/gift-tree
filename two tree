@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小树成长记 - 互动游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(180deg, #87CEEB 0%, #98D8AA 70%, #7CB342 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Microsoft YaHei', sans-serif;
+            overflow: hidden;
+        }
+
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.8;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .cloud1 {
+            width: 100px;
+            height: 40px;
+            top: 10%;
+            left: 10%;
+        }
+
+        .cloud2 {
+            width: 150px;
+            height: 50px;
+            top: 15%;
+            right: 15%;
+            animation-delay: -5s;
+        }
+
+        .cloud3 {
+            width: 80px;
+            height: 30px;
+            top: 8%;
+            left: 50%;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(30px); }
+        }
+
+        .game-container {
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 4rem;
+            color: #2E7D32;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .status-text {
+            font-size: 2rem;
+            color: #1B5E20;
+            margin-bottom: 30px;
+            min-height: 60px;
+        }
+
+        .tree-container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            margin: 0 auto 30px;
+        }
+
+        .tree-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.5s ease;
+            filter: drop-shadow(5px 10px 15px rgba(0,0,0,0.3));
+        }
+
+        .tree-image.grow {
+            animation: grow 0.8s ease-out;
+        }
+
+        @keyframes grow {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .controls {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 20px 50px;
+            font-size: 1.8rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-water {
+            background: linear-gradient(135deg, #42A5F5, #1E88E5);
+            color: white;
+        }
+
+        .btn-water:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+        }
+
+        .btn-fertilize {
+            background: linear-gradient(135deg, #8D6E63, #5D4037);
+            color: white;
+        }
+
+        .btn-fertilize:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(93, 64, 55, 0.4);
+        }
+
+        .btn-sun {
+            background: linear-gradient(135deg, #FFB74D, #FF9800);
+            color: white;
+        }
+
+        .btn-sun:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 152, 0, 0.4);
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #66BB6A, #43A047);
+            color: white;
+            margin-top: 20px;
+        }
+
+        .progress-dots {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ccc;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            background: #FFD54F;
+            transform: scale(1.3);
+        }
+
+        .dot.completed {
+            background: #4CAF50;
+        }
+
+        /* 浇水动画效果 */
+        .water-drop {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #42A5F5;
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @keyframes waterFall {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(200px) scale(0.5);
+            }
+        }
+
+        /* 花朵飘落效果 */
+        .flower-petal {
+            position: fixed;
+            width: 15px;
+            height: 15px;
+            background: #FFB6C1;
+            border-radius: 50% 0 50% 50%;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        @keyframes petalFall {
+            0% {
+                opacity: 1;
+                transform: translateY(0) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(100vh) rotate(720deg);
+            }
+        }
+
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
+        .sparkle {
+            position: absolute;
+            font-size: 2rem;
+            animation: sparkle 1s ease-out forwards;
+        }
+    </style>
+</head>
+<body>
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
+    <div class="cloud cloud3"></div>
+
+    <div class="game-container">
+        <h1>🌱 小树成长记 🌳</h1>
+
+        <div class="progress-dots">
+            <div class="dot" id="dot1"></div>
+            <div class="dot" id="dot2"></div>
+            <div class="dot" id="dot3"></div>
+        </div>
+
+        <div class="status-text" id="status">小树苗需要你的呵护！给它浇浇水吧～</div>
+
+        <div class="tree-container">
+            <img src="images/1.png" alt="小树苗" class="tree-image" id="tree">
+        </div>
+
+        <div class="controls" id="controls">
+            <button class="btn btn-water" id="waterBtn">💧 浇水</button>
+            <button class="btn btn-fertilize" id="fertilizeBtn">🧪 施肥</button>
+            <button class="btn btn-sun" id="sunBtn">☀️ 晒太阳</button>
+        </div>
+
+        <button class="btn btn-reset" id="resetBtn" style="display: none;">🔄 重新开始</button>
+    </div>
+
+    <div class="celebration" id="celebration"></div>
+
+    <script>
+        let stage = 1;
+        const totalStages = 4;
+
+        const tree = document.getElementById('tree');
+        const status = document.getElementById('status');
+        const waterBtn = document.getElementById('waterBtn');
+        const fertilizeBtn = document.getElementById('fertilizeBtn');
+        const sunBtn = document.getElementById('sunBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const controls = document.getElementById('controls');
+        const celebration = document.getElementById('celebration');
+
+        const statusTexts = {
+            1: "小树苗需要你的呵护！给它浇浇水吧～",
+            2: "小树在慢慢长大，继续照顾它吧！",
+            3: "小树长得越来越壮了，再坚持一下！",
+            4: "🎉 恭喜！小树开花了！真漂亮！"
+        };
+
+        function updateProgress() {
+            for (let i = 1; i <= 3; i++) {
+                const dot = document.getElementById('dot' + i);
+                dot.classList.remove('active', 'completed');
+                if (i < stage) {
+                    dot.classList.add('completed');
+                } else if (i === stage) {
+                    dot.classList.add('active');
+                }
+            }
+        }
+
+        function createWaterDrops() {
+            const container = document.querySelector('.tree-container');
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    const drop = document.createElement('div');
+                    drop.className = 'water-drop';
+                    drop.style.left = (30 + Math.random() * 40) + '%';
+                    drop.style.top = '10%';
+                    drop.style.animation = 'waterFall 0.6s ease-out forwards';
+                    container.appendChild(drop);
+                    setTimeout(() => drop.remove(), 600);
+                }, i * 100);
+            }
+        }
+
+        function createSparkles() {
+            const colors = ['⭐', '✨', '🌟', '💫', '🎊'];
+            for (let i = 0; i < 30; i++) {
+                setTimeout(() => {
+                    const sparkle = document.createElement('div');
+                    sparkle.className = 'sparkle';
+                    sparkle.textContent = colors[Math.floor(Math.random() * colors.length)];
+                    sparkle.style.left = Math.random() * 100 + '%';
+                    sparkle.style.top = Math.random() * 100 + '%';
+                    celebration.appendChild(sparkle);
+                    setTimeout(() => sparkle.remove(), 1000);
+                }, i * 100);
+            }
+        }
+
+        function createFallingPetals() {
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const petal = document.createElement('div');
+                    petal.className = 'flower-petal';
+                    petal.style.left = Math.random() * 100 + '%';
+                    petal.style.top = '-20px';
+                    petal.style.background = ['#FFB6C1', '#FFC0CB', '#FF69B4', '#FFD700'][Math.floor(Math.random() * 4)];
+                    petal.style.animation = `petalFall ${3 + Math.random() * 2}s ease-out forwards`;
+                    document.body.appendChild(petal);
+                    setTimeout(() => petal.remove(), 5000);
+                }, i * 150);
+            }
+        }
+
+        function growTree(action) {
+            if (stage >= totalStages) return;
+
+            stage++;
+            tree.src = `images/${stage}.png`;
+            tree.classList.add('grow');
+            setTimeout(() => tree.classList.remove('grow'), 800);
+
+            updateProgress();
+            status.textContent = statusTexts[stage];
+
+            if (action === 'water') {
+                createWaterDrops();
+            }
+
+            if (stage === totalStages) {
+                controls.style.display = 'none';
+                resetBtn.style.display = 'inline-block';
+                createSparkles();
+                createFallingPetals();
+            }
+        }
+
+        waterBtn.addEventListener('click', () => growTree('water'));
+        fertilizeBtn.addEventListener('click', () => growTree('fertilize'));
+        sunBtn.addEventListener('click', () => growTree('sun'));
+
+        resetBtn.addEventListener('click', () => {
+            stage = 1;
+            tree.src = 'images/1.png';
+            status.textContent = statusTexts[1];
+            controls.style.display = 'flex';
+            resetBtn.style.display = 'none';
+            updateProgress();
+        });
+
+        updateProgress();
+    </script>
+</body>
+</html>
